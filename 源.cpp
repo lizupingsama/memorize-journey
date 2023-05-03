@@ -276,16 +276,21 @@ void HitDet()//Åö×²£¬Ðü¿Õ¼ì²â
 		}
 	}
 
-	if (NumOfPile > 0)
+	if (NumOfPile > 0)//ÅÚµ¯»÷ÖÐÅÐ¶¨
 	{
 		for (int i = 0; i < NumOfPile; i++)
 		{
-			if ((pile[i].x_left + 5 <= people.body_left_x && people.body_left_x <= pile[i].x_right) || (pile[i].x_left + 5 <= people.body_right_x && people.body_right_x <= pile[i].x_right))
-				if ((people.head_y <= pile[i].y_up && pile[i].y_up <= people.foot_y) || (people.head_y <= pile[i].y_down && pile[i].y_down <= people.foot_y))
+			if ((pile[i].x_left + 5 <= people.body_left_x && people.body_left_x <= pile[i].x_right) || 
+				(pile[i].x_left + 5 <= people.body_right_x && people.body_right_x <= pile[i].x_right))
+				if ((people.head_y <= pile[i].y_up && pile[i].y_up <= people.foot_y) ||
+					(people.head_y <= pile[i].y_down && pile[i].y_down <= people.foot_y))
 				{
+					if (people.life > 0)
 					people.life -= 10;
-					for (int n = i; n < NumOfPile - 1; n++)
+
+					for (int n = i; n < NumOfPile - 1; n++)//²Á³ýÔ­ÓÐµÄÅÚµ¯
 						pile[n] = pile[n + 1];
+
 					NumOfPile--;
 					pile = (struct pile*)realloc(pile, sizeof(struct pile) * NumOfPile);
 				}
@@ -952,7 +957,6 @@ DWORD WINAPI draw_pile(LPVOID PILE)
 		pile[0].y_down = pile[0].y_up + 20;
 		for (int i = 0; i < NumOfPile; i++)
 		{
-			//if (pile[0].x_left <= windows.x2 || pile[0].x_right >= windows.x1)
 			putimage(pile[i].x_left - windows.x1, pile[1].y_up - windows.y1, 68, 25, &pile1, 0, y1, SRCAND);
 			putimage(pile[i].x_left - windows.x1, pile[1].y_up - windows.y1, 68, 25, &pile2, 0, y1, SRCPAINT);
 		}
@@ -971,7 +975,6 @@ int main()
 	CreateThread(NULL, NULL, Star, NULL, NULL, NULL);
 	start_menu();
 	CreateThread(NULL, NULL, RecordPosition, NULL, NULL, NULL);
-	//CreateThread(NULL, NULL, draw_pile, NULL, NULL, NULL);
 	while (1)
 	{
 		GameDraw();

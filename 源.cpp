@@ -49,82 +49,67 @@ DWORD WINAPI Star(LPVOID lpparame)
 void KeyControl()
 {
 	int flag = 0;
-	while (_kbhit())
+	if (GetAsyncKeyState(68))//d键右走
 	{
-		switch (_getch())
+		people.direction = right;
+		people.x_speed = 10;
+		flag = 1;
+		move();
+	}
+	if (GetAsyncKeyState(65))//a键左走
+	{
+		people.direction = left;
+		people.x_speed = 10;
+		flag = 1;
+		move();
+	}
+	if (GetAsyncKeyState(32))//空格跳跃
+	{
+		if (people.flying == false)//禁止悬空时使用跳跃
 		{
-		case 'd':
-		case 'D':
-		case 39:
-			//printf("右");
-			people.direction = right;
-			people.x_speed = 10;
-			move();
+			people.y_speed = -20;
 			flag = 1;
-			break;
-
-		case 'a':
-		case 'A':
-		case 37:
-			//printf("左");
-			people.direction = left;
-			people.x_speed = 10;
-			move();
-			flag = 1;
-			break;
-			//case 'w':
-			//case 'W':
-				//old_bk_y = people.foot_y - 422;
-				//people.foot_y -= people.y_speed;
-				//bk_y = people.foot_y - 422;
-				//break;
-			//case 's':
-			//case 'S':
-
-				//old_bk_y = people.foot_y - 422;
-				//people.foot_y += people.y_speed;
-				//bk_y = people.foot_y - 422;
-			//	break;
-
-		case 32://空格跳跃
-			if (people.flying == false)//禁止悬空时使用跳跃
-			{
-				//printf("跳");
-				people.y_speed = -20;
+			if (people.x_speed != 0)
 				people.x_speed = 10;
-				flag = 1;
-				move();
-				music_jump_flag = 1;
-				CreateThread(NULL, NULL, musicplay, NULL, NULL, NULL);
-			}
-			break;
 
-		case 'b':
-			BackTrack();
-			break;
-
-		case 13://回车传送
-			if (3350 <= people.foot_x && people.body_left_x <= 3455 && people.foot_y == 825)//1号传送门
-			{
-				ChangeLevel(2);
-			}
-			break;
-
-		case 'r':
-		case 'R':
-			flash();
-			break;
+			move();
+			music_jump_flag = 1;
+			CreateThread(NULL, NULL, musicplay, NULL, NULL, NULL);
 		}
-		//while(_kbhit())
-		//_getch();
-
+	}
+	if (GetAsyncKeyState(66))//b键回溯3秒前位置
+	{
+		BackTrack();
+	}
+	if (GetAsyncKeyState(13))//回车传送
+	{
+		if (3350 <= people.foot_x && people.body_left_x <= 3455 && people.foot_y == 825)//1号传送门
+		{
+			ChangeLevel(2);
+		}
+	}
+	if (GetAsyncKeyState(82))//r键闪现
+	{
+		flash();
+	}
+	if (GetAsyncKeyState(70))//f键拾取
+	{
+		take_back();
+	}
+	if (GetAsyncKeyState(9))//tap打开背包
+	{
+		back_menu_flag = 1;
+		back_menu();
+	}
+	if (flag == 1)
+	{
 		time(&now1);
 		localtime_s(&t1, &now1);
 		//进入移动音效函数
 		if (flagm == 0)
 		{
 			msc2 = (t1.tm_min * 60 + t1.tm_sec) * 1000 + t.wMilliseconds;//用毫秒记录当前时间
-			if (msc2 - msc1 >= 200 || msc1 == 1)//设置脚步声间隔时间
+			if (msc2 - msc1 >= 2000 || msc1 == 1)//设置脚步声间隔时间
 				flagm = 1;
 		}
 
@@ -140,12 +125,13 @@ void KeyControl()
 			}
 		}
 	}
-
+	
 	HitDet();
 	if (people.flying == false)//在空中时，x速度不衰减，在地面时，松开方向键x速度归零
 		people.x_speed = 0;
+
 	if (flag == 0)//未敲击键盘
-		x = 0;
+		x = 0;//人物图片复位到第一张
 }
 
 void move()
@@ -162,18 +148,6 @@ void move()
 		bk_x = people.foot_x - 445;
 		if (x == 360)//放完第四张图片后回到第一张
 			x = 0;
-		if (people.flying == false)//禁止悬空时使用跳跃
-			while (_kbhit())//横向移动时检测跳跃
-			{
-				switch (_getch())
-				{
-				case 32:
-					people.y_speed = -20;
-					music_jump_flag = 1;
-					CreateThread(NULL, NULL, musicplay, NULL, NULL, NULL);
-					break;
-				}
-			}
 	}
 
 	if (people.direction == left && people.x_speed != 0)
@@ -189,24 +163,13 @@ void move()
 		if (x == 360)//放完第四张图片后回到第一张
 			x = 0;
 
-		if (people.flying == false)//禁止悬空时使用跳跃
-			while (_kbhit())//横向移动时检测跳跃
-			{
-				switch (_getch())
-				{
-				case 32:
-					people.y_speed = -20;
-					music_jump_flag = 1;
-					CreateThread(NULL, NULL, musicplay, NULL, NULL, NULL);
-					break;
-				}
-			}
 	}
 
 	if (people.y_speed != 0 || people.flying == true)//竖直方向上的移动
 	{
 		old_bk_y = people.foot_y - 425;
 		people.foot_y += people.y_speed;
+		people.head_y += people.y_speed;
 		bk_y = people.foot_y - 425;
 		windows.y1 += people.y_speed;
 		windows.y2 += people.y_speed;
@@ -223,6 +186,7 @@ void move()
 	}
 
 }
+
 
 void HitDet()//碰撞，悬空检测
 {
@@ -276,26 +240,89 @@ void HitDet()//碰撞，悬空检测
 		}
 	}
 
-	if (NumOfPile > 0)//炮弹击中判定
+	if (NumOfPile_X > 0)//炮弹击中判定
 	{
-		for (int i = 0; i < NumOfPile; i++)
+		for (int i = 0; i < NumOfPile_X; i++)
 		{
-			if ((pile[i].x_left + 5 <= people.body_left_x && people.body_left_x <= pile[i].x_right) || 
-				(pile[i].x_left + 5 <= people.body_right_x && people.body_right_x <= pile[i].x_right))
-				if ((people.head_y <= pile[i].y_up && pile[i].y_up <= people.foot_y) ||
-					(people.head_y <= pile[i].y_down && pile[i].y_down <= people.foot_y))
+			if ((pile_x[i].x_left + 5 <= people.body_left_x && people.body_left_x <= pile_x[i].x_right) ||
+				(pile_x[i].x_left + 5 <= people.body_right_x && people.body_right_x <= pile_x[i].x_right))
+				if ((people.head_y <= pile_x[i].y_up && pile_x[i].y_up <= people.foot_y) ||
+					(people.head_y <= pile_x[i].y_down && pile_x[i].y_down <= people.foot_y))
+				{
+					if (people.life > 0)
+						people.life -= 10;
+
+					for (int n = i; n < NumOfPile_X - 1; n++)//擦除原有的炮弹
+						pile_x[n] = pile_x[n + 1];
+
+					NumOfPile_X--;
+					pile_x = (struct pile*)realloc(pile_x, sizeof(struct pile) * NumOfPile_X);
+				}
+		}
+
+		for (int i = 0; i < NumOfPile_Y; i++)
+		{
+			if ((pile_y[i].x_left + 5 <= people.body_left_x && people.body_left_x <= pile_y[i].x_right) || 
+				(pile_y[i].x_left + 5 <= people.body_right_x && people.body_right_x <= pile_y[i].x_right))
+				if ((people.head_y <= pile_y[i].y_up && pile_y[i].y_up <= people.foot_y) ||
+					(people.head_y <= pile_y[i].y_down && pile_y[i].y_down <= people.foot_y))
 				{
 					if (people.life > 0)
 					people.life -= 10;
 
-					for (int n = i; n < NumOfPile - 1; n++)//擦除原有的炮弹
-						pile[n] = pile[n + 1];
+					for (int n = i; n < NumOfPile_Y - 1; n++)//擦除原有的炮弹
+						pile_y[n] = pile_y[n + 1];
 
-					NumOfPile--;
-					pile = (struct pile*)realloc(pile, sizeof(struct pile) * NumOfPile);
+					NumOfPile_Y--;
+					pile_y = (struct pile*)realloc(pile_y, sizeof(struct pile) * NumOfPile_Y);
 				}
 		}
+	}
+}
 
+void take_back()
+{
+	//背包拾取判定
+	for (int i = 0; i < NumOfBack; i++)
+	{
+		if ((back[i].x1 <= people.body_left_x || people.body_left_x <= back[i].x2 ||
+			back[i].x1 <= people.body_right_x || people.body_right_x <= back[i].x2)
+			&& people.foot_y == back[i].y2)
+
+			back[i].back_flag = 0;
+	}
+}
+
+void back_menu()
+{
+	//背包菜单界面绘制
+	cleardevice();
+	while (back_menu_flag == 1)
+	{
+		putimage(350, 175, &back_menu1, SRCAND);
+		putimage(350, 175, &back_menu2, SRCPAINT);
+		for (int i = 0; i < NumOfBack; i++)
+		{
+			if (back[i].back_flag == 0)
+			{
+				switch (i+1)
+				{
+				case 1:
+					putimage(385, 205, &back_a2_1, SRCAND);
+					putimage(385, 205, &back_a2_2, SRCPAINT);
+					break;
+				}
+			}
+		}
+		Sleep(200);
+		
+		
+		if (GetAsyncKeyState(9))
+		{
+			back_menu_flag = 0;
+			Sleep(100);
+		}
+					
 	}
 }
 
@@ -303,43 +330,27 @@ void GameDraw()
 {
 	cleardevice();
 	BeginBatchDraw();//双缓冲防止闪屏
-	char c1[50];
-	char c2[50], c3[50], c4[50], c5[50], c6[50], c7[50];
-	sprintf(c1, "%d", people.foot_x);
-	sprintf(c2, "%d", people.foot_y);
-	sprintf(c3, "%d", people.body_left_x);
-	sprintf(c4, "%d", people.body_right_x);
-	sprintf(c5, "%d", people.past_foot_x);
-	sprintf(c6, "%d", people.past_foot_y);
-	sprintf(c7, "%d", people.life);
 
 	if (level_num == 1)//第一关
 	{
 		putimage(0, 0, 1600, 700, &bk, bk_x, bk_y);//背景图片
 
-		setfillcolor(RGB(255, 63, 63));//墙的颜色
-		if (wall[2].x1 <= windows.x2 || wall[2].x2 >= windows.x1)
-			fillrectangle(wall[2].x1 - windows.x1, wall[2].y1 - windows.y1, wall[2].x2 - windows.x1, wall[2].y1 - windows.y1 + 5);
-		if (flags == 1)//实现墙左右动
+		if (back[0].back_flag == 1)
 		{
-			wall[2].x1 += 10;
-			wall[2].x2 += 10;
-			count++;
-			if (count == 8)
+			putimage(back[0].x1 - windows.x1, back[0].y1 - windows.y1, &back_a_1, SRCAND);//背包图片
+			putimage(back[0].x1 - windows.x1, back[0].y1 - windows.y1, &back_a_2, SRCPAINT);
+
+			if (back_move_flag_a == 1)
 			{
-				flags = 0;
-				count = 0;
+				back[0].y1 += 2;
+				if (back[0].y1 == 765)
+					back_move_flag_a = 0;
 			}
-		}
-		if (flags == 0)//实现墙左右动
-		{
-			wall[2].x1 -= 10;
-			wall[2].x2 -= 10;
-			count++;
-			if (count == 8)
+			if (back_move_flag_a == 0)
 			{
-				flags = 1;
-				count = 0;
+				back[0].y1 -= 2;
+				if (back[0].y1 == 745)
+					back_move_flag_a = 1;
 			}
 		}
 	}
@@ -348,45 +359,144 @@ void GameDraw()
 	{
 		putimage(0, 0, 1600, 700, &bk2, bk_x, bk_y);//背景图片
 
-		//绘制炮弹
-		time(&now1);
-		localtime_s(&pile_timer[1], &now1);
-		if (pile_flag == 1)
+		//绘制横向炮弹
 		{
-			NumOfPile++;
-			if (NumOfPile == 1)
-				pile = (struct pile*)malloc(sizeof(struct pile) * NumOfPile);
-			if (NumOfPile > 1)
-				pile = (struct pile*)realloc(pile, sizeof(struct pile) * NumOfPile);
-			pile[NumOfPile - 1].x_left = 2230;
-			pile[NumOfPile - 1].x_right = pile[NumOfPile - 1].x_left + 65;
-			pile[NumOfPile - 1].y_up = 950;
-			pile[NumOfPile - 1].y_down = pile[NumOfPile - 1].y_up + 20;
-			pile_flag = 0;
+		time(&now1);
+		localtime_s(&pile_x_timer[1], &now1);
+		if (pile_flag1 == 1)
+		{
+			NumOfPile_X++;
+			if (NumOfPile_X == 1)
+				pile_x = (struct pile*)malloc(sizeof(struct pile) * NumOfPile_X);
+			if (NumOfPile_X > 1)
+				pile_x = (struct pile*)realloc(pile_x, sizeof(struct pile) * NumOfPile_X);
+
+			pile_x[NumOfPile_X - 1].x_left = 2230;
+			pile_x[NumOfPile_X - 1].x_right = pile_x[NumOfPile_X - 1].x_left + 65;
+			pile_x[NumOfPile_X - 1].y_up = 950;
+			pile_x[NumOfPile_X - 1].y_down = pile_x[NumOfPile_X - 1].y_up + 20;
+			pile_flag1 = 0;
 
 			time(&now1);
-			localtime_s(&pile_timer[0], &now1);
+			localtime_s(&pile_x_timer[0], &now1);
 		}
-		if ((pile_timer[1].tm_min * 60 + pile_timer[1].tm_sec) - (pile_timer[0].tm_min * 60 + pile_timer[0].tm_sec) >= 5)
-			pile_flag = 1;
+		if ((pile_x_timer[1].tm_min * 60 + pile_x_timer[1].tm_sec) - (pile_x_timer[0].tm_min * 60 + pile_x_timer[0].tm_sec) >= 5)//设置炮弹间时间间隔
+			pile_flag1 = 1;
 
-		if (NumOfPile > 0)
+		if (NumOfPile_X > 0)
 		{
-			for (int i = 0; i < NumOfPile; i++)
+			for (int i = 0; i < NumOfPile_X; i++)
 			{
-				putimage(pile[i].x_left - windows.x1, pile[i].y_up - windows.y1, 68, 25, &pile1, 0, y1, SRCAND);
-				putimage(pile[i].x_left - windows.x1, pile[i].y_up - windows.y1, 68, 25, &pile2, 0, y1, SRCPAINT);
+				putimage(pile_x[i].x_left - windows.x1, pile_x[i].y_up - windows.y1, 68, 25, &pile_1, 0, pile_x_y1, SRCAND);
+				putimage(pile_x[i].x_left - windows.x1, pile_x[i].y_up - windows.y1, 68, 25, &pile_2, 0, pile_x_y1, SRCPAINT);
 			}
-			y1 += 25;
-			if (y1 == 300)
-				y1 = 0;
-			for (int i = 0; i < NumOfPile; i++)
+			pile_x_y1 += 25;
+			if (pile_x_y1 == 300)
+				pile_x_y1 = 0;
+			for (int i = 0; i < NumOfPile_X; i++)
 			{
-				pile[i].x_left -= 5;
-				pile[i].x_right -= 5;
+				pile_x[i].x_left -= 5;
+				pile_x[i].x_right -= 5;
 			}
 		}
 	}
+			//绘制竖向炮弹
+		{
+			time(&now1);
+			localtime_s(&pile_y_timer[1], &now1);
+			GetSystemTime(&t3);
+
+			if (pile_flag2 == 1)
+			{
+				NumOfPile_Y++;
+				if (NumOfPile_Y == 1)
+					pile_y = (struct pile*)malloc(sizeof(struct pile) * NumOfPile_Y);
+				if (NumOfPile_Y > 1)
+					pile_y = (struct pile*)realloc(pile_y, sizeof(struct pile) * NumOfPile_Y);
+				switch (pile_shooter_no)
+				{
+				case 1:
+					pile_y[NumOfPile_Y - 1].x_left = 2940;
+					pile_y[NumOfPile_Y - 1].x_right = pile_y[NumOfPile_Y - 1].x_left + 25;
+					pile_y[NumOfPile_Y - 1].y_up = 940;
+					pile_y[NumOfPile_Y - 1].y_down = pile_y[NumOfPile_Y - 1].y_up + 70;
+					pile_flag2 = 0;
+					pile_shooter_no = 3;
+					break;
+				case 2:
+					pile_y[NumOfPile_Y - 1].x_left = 3340;
+					pile_y[NumOfPile_Y - 1].x_right = pile_y[NumOfPile_Y - 1].x_left + 25;
+					pile_y[NumOfPile_Y - 1].y_up = 940;
+					pile_y[NumOfPile_Y - 1].y_down = pile_y[NumOfPile_Y - 1].y_up + 70;
+					pile_flag2 = 0;
+					pile_shooter_no = 4;
+					break;
+				case 3:
+					pile_y[NumOfPile_Y - 1].x_left = 3735;
+					pile_y[NumOfPile_Y - 1].x_right = pile_y[NumOfPile_Y - 1].x_left + 25;
+					pile_y[NumOfPile_Y - 1].y_up = 940;
+					pile_y[NumOfPile_Y - 1].y_down = pile_y[NumOfPile_Y - 1].y_up + 70;
+					pile_flag2 = 0;
+					pile_shooter_no = 2;
+					break;
+				case 4:
+					pile_y[NumOfPile_Y - 1].x_left = 4110;
+					pile_y[NumOfPile_Y - 1].x_right = pile_y[NumOfPile_Y - 1].x_left + 25;
+					pile_y[NumOfPile_Y - 1].y_up = 940;
+					pile_y[NumOfPile_Y - 1].y_down = pile_y[NumOfPile_Y - 1].y_up + 70;
+					pile_flag2 = 0;
+					pile_shooter_no = 1;
+					break;
+				}
+				time(&now1);
+				localtime_s(&pile_y_timer[0], &now1);
+				GetSystemTime(&t4);
+			}
+			if (((pile_y_timer[1].tm_min * 60 + pile_y_timer[1].tm_sec) * 1000 + t3.wMilliseconds) -
+				((pile_y_timer[0].tm_min * 60 + pile_y_timer[0].tm_sec) * 1000 + t4.wMilliseconds) >= 350)//设置炮弹间时间间隔
+				pile_flag2 = 1;
+
+			if (NumOfPile_Y > 0)
+			{
+				for (int i = 0; i < NumOfPile_Y; i++)
+				{
+					putimage(pile_y[i].x_left - windows.x1, pile_y[i].y_up - windows.y1, 25, 68, &pile3, pile_y_x1, 0, SRCAND);
+					putimage(pile_y[i].x_left - windows.x1, pile_y[i].y_up - windows.y1, 25, 68, &pile4, pile_y_x1, 0, SRCPAINT);
+				}
+				pile_y_x1 += 25;
+				if (pile_y_x1 == 300)
+					pile_y_x1 = 0;
+				for (int i = 0; i < NumOfPile_Y; i++)
+				{
+					pile_y[i].y_down += 10;
+					pile_y[i].y_up += 10;
+				}
+			}
+		}
+	}
+
+	//技能图标绘制
+	settextstyle(30, 30, "新宋体");
+	if (flash_flag == 1)//闪现图标
+		putimage(0, 230, &FLASH);
+	if (flash_flag == 0)
+	{
+		putimage(0, 230, &FLASH, SRCAND);
+		char cd[40];
+		sprintf(cd, "%d", flash_cd);
+		outtextxy(10, 240, cd);
+	} 
+
+	if (back_track_flag == 1)//回溯图标
+		putimage(0, 290, &back_track);
+	if (back_track_flag == 0)
+	{
+		putimage(0, 290, &back_track, SRCAND);
+		char cd[40];
+		sprintf(cd, "%d", back_track_cd);
+		outtextxy(10, 300, cd);
+	}
+
 
 	//血条绘制、
 	setfillcolor(RGB(255, 63, 63));//血条的颜色
@@ -407,6 +517,7 @@ void GameDraw()
 		putimage(400, 343, 90, 90, &people_left, x, y, SRCPAINT);
 	}
 
+	
 
 	//fillrectangle(0, 422, 1300, 427);
 	//line(455, 0, 455, 700);
@@ -414,30 +525,48 @@ void GameDraw()
 	//line(0, 425, 1300, 425);
 	//line(0, 350, 1300, 350);
 
-	setbkmode(TRANSPARENT);
+	//调试参数
+	{
+		settextstyle(15, 8, "新宋体");
+		char c1[50];
+		char c2[50], c3[50], c4[50], c5[50], c6[50], c7[50];
+		sprintf(c1, "%d", people.foot_x);
+		sprintf(c2, "%d", people.foot_y);
+		sprintf(c3, "%d", people.body_left_x);
+		sprintf(c4, "%d", people.body_right_x);
+		sprintf(c5, "%d", people.past_foot_x);
+		sprintf(c6, "%d", people.past_foot_y);
+		sprintf(c7, "%d", people.life);
 
-	strcat(c1, "foot_x");
-	strcat(c2, "foot_y");
-	strcat(c3, "body_left_x");
-	strcat(c4, "body_right_y");
-	strcat(c5, "past_foot_x");
-	strcat(c6, "past_foot_y");
-	strcat(c7, "people_life");
-	char c8[] = "HP";
+		setbkmode(TRANSPARENT);
 
-	settextcolor(WHITE);
-	outtextxy(1000, 200, c1);
-	outtextxy(1000, 220, c2);
-	outtextxy(1000, 240, c3);
-	outtextxy(1000, 260, c4);
-	outtextxy(1000, 280, c5);
-	outtextxy(1000, 300, c6);
-	outtextxy(1000, 320, c7);
-	settextcolor(RED);
-	outtextxy(45, 48, c8);
+		strcat(c1, "foot_x");
+		strcat(c2, "foot_y");
+		strcat(c3, "body_left_x");
+		strcat(c4, "body_right_y");
+		strcat(c5, "past_foot_x");
+		strcat(c6, "past_foot_y");
+		strcat(c7, "people_life");
+		char c8[] = "HP";
+
+		settextcolor(WHITE);
+		outtextxy(1000, 200, c1);
+		outtextxy(1000, 220, c2);
+		outtextxy(1000, 240, c3);
+		outtextxy(1000, 260, c4);
+		outtextxy(1000, 280, c5);
+		outtextxy(1000, 300, c6);
+		outtextxy(1000, 320, c7);
+		settextcolor(RED);
+		outtextxy(45, 48, c8);
+	}
 
 	EndBatchDraw();
-	Sleep(58);
+
+	if (people.flying == false)
+		Sleep(58);
+	if (people.flying == true)
+		Sleep(70);
 }
 
 void GameInit()
@@ -492,6 +621,10 @@ void GameInit()
 	wall[5].x1 = 1500;
 	wall[5].x2 = 2500;
 	wall[5].y1 = 1000;
+	wall[6].x1 = 2730;
+	wall[6].x2 = 4530;
+	wall[6].y1 = 1270;
+	wall[6].y2 = 1400;
 
 	//陷阱参数
 	//第二关
@@ -512,13 +645,23 @@ void GameInit()
 	trap[3].y1 = 1000;
 	trap[3].y2 = 1000;
 
+	//背包参数定义
+	back_menu_flag = 0;
+	back[0].x1 = 3230;
+	back[0].x2 = 3260;
+	back[0].y1 = 745;
+	back[0].y2 = 825;
+	back[0].back_flag = 1;
+
+
 	//关卡出生点坐标，以脚步坐标为基准
 	level[0].start_x = 445;
 	level[0].start_y = 425;
 	level[1].start_x = 330;
 	level[1].start_y = 1000;
 
-	NumOfPile = 0;//炮弹数
+	NumOfPile_X = 0;//炮弹数
+	NumOfPile_Y = 0;
 
 	count = 0;
 	flags = 0;
@@ -526,7 +669,11 @@ void GameInit()
 	step = 1;//脚步声循环参数
 	dialogue_no = 1;//休闲台词循环播放
 	dialogue_flag = 1;
-	pile_flag = 1;//控制炮弹发射
+	pile_flag1 = 1;//控制炮弹发射
+	pile_flag2 = 1;
+
+	flash_flag = 1;
+	back_track_flag = 1;
 
 	mouse = false;
 	msc1 = 0;
@@ -541,6 +688,7 @@ void GameInit()
 	x = 0;
 	y = 0;
 	bk_flag = 1;
+
 	loadimage(&people_right, "people-right.png", 360, 90);
 	loadimage(&people_left, "people-left.png", 360, 90);
 	loadimage(&people_right_2, "people-right-2.png", 360, 90);
@@ -552,8 +700,19 @@ void GameInit()
 	loadimage(&title1, "title1.png");
 	loadimage(&title2, "title2.png");
 	loadimage(&play, "play.png", 130, 40);
-	loadimage(&pile1, "炮弹1.png");
-	loadimage(&pile2, "炮弹2.png");
+	loadimage(&pile_1, "炮弹1.png");
+	loadimage(&pile_2, "炮弹2.png");
+	loadimage(&pile3, "炮弹竖向1.png");
+	loadimage(&pile4, "炮弹竖向2.png");
+	loadimage(&back_a_1, "back_a_1.png");
+	loadimage(&back_a_2, "back_a_2.png");
+	loadimage(&back_a2_1, "back_a_1.png", 135, 115);
+	loadimage(&back_a2_2, "back_a_2.png", 135, 115);
+	loadimage(&back_menu1, "背包菜单1.png");
+	loadimage(&back_menu2, "背包菜单2.png");
+	loadimage(&FLASH, "flash.png",50,50);
+	loadimage(&back_track, "back_track.png",50,50);
+
 
 	mciSendString("close bgm1", NULL, 0, NULL);
 	mciSendString("open bgm1.mp3 alias bgm1", 0, NULL, 0);
@@ -627,32 +786,38 @@ DWORD WINAPI RecordPosition(LPVOID postion)//开辟一条线程来记录角色三秒前位置
 		people.past_foot_y = old_y[0];
 		people.past_y_speed = old_speed_y[0];
 
-		system("cls");
-		printf("%d\n", NumOfOldPosition);
-		printf("%d %d", TIME[0], msc);
+		//system("cls");
+		//printf("%d\n", NumOfOldPosition);
+		//printf("%d %d", TIME[0], msc);
 	}
 	return 1;
 }
 
 void BackTrack()
 {
-	int X = people.foot_x - people.past_foot_x;
-	int Y = people.foot_y - people.past_foot_y;
-	people.foot_x = people.past_foot_x;
-	people.foot_y = people.past_foot_y;
-	people.y_speed = people.past_y_speed;
-	people.body_left_x -= X;
-	people.body_right_x -= X;
-	people.head_x -= X;
-	people.head_y -= Y;
-	windows.x1 -= X;
-	windows.x2 -= X;
-	windows.y1 -= Y;
-	windows.y2 -= Y;
-	bk_x -= X;
-	bk_y -= Y;
-	music_back_flag = 1;
-	CreateThread(NULL, NULL, musicplay, NULL, NULL, NULL);
+	if (back_track_flag == 1)
+	{
+		int X = people.foot_x - people.past_foot_x;
+		int Y = people.foot_y - people.past_foot_y;
+		people.foot_x = people.past_foot_x;
+		people.foot_y = people.past_foot_y;
+		people.y_speed = people.past_y_speed;
+		people.body_left_x -= X;
+		people.body_right_x -= X;
+		people.head_x -= X;
+		people.head_y -= Y;
+		windows.x1 -= X;
+		windows.x2 -= X;
+		windows.y1 -= Y;
+		windows.y2 -= Y;
+		bk_x -= X;
+		bk_y -= Y;
+		music_back_flag = 1;
+		CreateThread(NULL, NULL, musicplay, NULL, NULL, NULL);
+		time(&now1);
+		localtime_s(&back_track_timer[1], &now1);
+		back_track_flag = 0;
+	}
 }
 
 DWORD WINAPI musicplay(LPVOID lpparamer)//使用多线程解决音乐播放会卡顿问题
@@ -743,40 +908,64 @@ void ChangeLevel(int a)
 	music_back_flag = 1;
 	CreateThread(NULL, NULL, musicplay, NULL, NULL, NULL);
 	NumOfOldPosition = 1;
-	old_x[NumOfOldPosition - 1] = level[a - 1].start_x;
-	old_y[NumOfOldPosition - 1] = level[a - 1].start_y;
-	old_speed_y[NumOfOldPosition - 1] = 0;
 }
 
 void flash()//闪现
 {
-	if (people.direction == right)
+	if (flash_flag == 1)
 	{
-		int X = 150;
-		people.foot_x += X;
-		people.body_left_x += X;
-		people.body_right_x += X;
-		people.head_x += X;
-		windows.x1 += X;
-		windows.x2 += X;
-		bk_x += X;
-		music_back_flag = 1;
-		CreateThread(NULL, NULL, musicplay, NULL, NULL, NULL);
+		if (people.direction == right)
+		{
+			int X = 150;
+			people.foot_x += X;
+			people.body_left_x += X;
+			people.body_right_x += X;
+			people.head_x += X;
+			windows.x1 += X;
+			windows.x2 += X;
+			bk_x += X;
+			music_back_flag = 1;
+			CreateThread(NULL, NULL, musicplay, NULL, NULL, NULL);
+		}
+
+		if (people.direction == left)
+		{
+			int X = 150;
+			people.foot_x -= X;
+			people.body_left_x -= X;
+			people.body_right_x -= X;
+			people.head_x -= X;
+			windows.x1 -= X;
+			windows.x2 -= X;
+			bk_x -= X;
+			music_back_flag = 1;
+			CreateThread(NULL, NULL, musicplay, NULL, NULL, NULL);
+		}
+
+		time(&now1);
+		localtime_s(&flash_timer[1], &now1);
+		flash_flag = 0;
+	}
+}
+
+DWORD WINAPI cd_timer(LPVOID Cd)//CD计时线程
+{
+	while (1)
+	{
+		time(&now1);
+		localtime_s(&flash_timer[0], &now1);
+		flash_cd = 5 - ((flash_timer[0].tm_min * 60 + flash_timer[0].tm_sec) - (flash_timer[1].tm_min * 60 + flash_timer[1].tm_sec));
+		if ((flash_timer[0].tm_min * 60 + flash_timer[0].tm_sec) - (flash_timer[1].tm_min * 60 + flash_timer[1].tm_sec) >= 5)
+			flash_flag = 1;
+
+		time(&now1);
+		localtime_s(&back_track_timer[0], &now1);
+		back_track_cd = 5 - ((back_track_timer[0].tm_min * 60 + back_track_timer[0].tm_sec) - (back_track_timer[1].tm_min * 60 + back_track_timer[1].tm_sec));
+		if ((back_track_timer[0].tm_min * 60 + back_track_timer[0].tm_sec) - (back_track_timer[1].tm_min * 60 + back_track_timer[1].tm_sec) >= 5)
+			back_track_flag = 1;
 	}
 
-	if (people.direction == left)
-	{
-		int X = 150;
-		people.foot_x -= X;
-		people.body_left_x -= X;
-		people.body_right_x -= X;
-		people.head_x -= X;
-		windows.x1 -= X;
-		windows.x2 -= X;
-		bk_x -= X;
-		music_back_flag = 1;
-		CreateThread(NULL, NULL, musicplay, NULL, NULL, NULL);
-	}
+	return 0;
 }
 
 void dialogue_play()
@@ -945,37 +1134,18 @@ DWORD WINAPI mouse_hit(LPVOID Mouse)
 	return 0;
 }
 
-DWORD WINAPI draw_pile(LPVOID PILE)
-{
-	int x1, y1 = 0;
-	while (1)
-	{
-		//BeginBatchDraw();
-		pile[0].x_left = 2230;
-		pile[0].x_right = pile[0].x_left + 65;
-		pile[0].y_up = 950;
-		pile[0].y_down = pile[0].y_up + 20;
-		for (int i = 0; i < NumOfPile; i++)
-		{
-			putimage(pile[i].x_left - windows.x1, pile[1].y_up - windows.y1, 68, 25, &pile1, 0, y1, SRCAND);
-			putimage(pile[i].x_left - windows.x1, pile[1].y_up - windows.y1, 68, 25, &pile2, 0, y1, SRCPAINT);
-		}
-		y1 += 25;
-		if (y1 == 300)
-			y1 = 0;
-		//Sleep(58);
-		//EndBatchDraw();
-	}
-}
+
 
 int main()
 {
 	GameInit();
-
 	CreateThread(NULL, NULL, Star, NULL, NULL, NULL);
 	start_menu();
+	
 	CreateThread(NULL, NULL, RecordPosition, NULL, NULL, NULL);
-	while (1)
+	CreateThread(NULL, NULL, cd_timer, NULL, NULL, NULL);
+	//ChangeLevel(2);
+	while (people.life > 0)
 	{
 		GameDraw();
 		KeyControl();

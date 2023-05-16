@@ -17,6 +17,24 @@
 #include<mmsystem.h>
 #pragma comment(lib,"winmm.lib")
 
+FILE* fp1, * fp2, * fp3, * fp4;
+
+
+int NumOfPlay;
+int first_game_flag;
+int endflag;
+int game_again_flag = 0;
+
+int storage_no;
+
+int flag_draw;
+int flag_dialogue;
+int flag_A;
+int flag_D;
+int flag_space;
+int flag_R;
+int flag_B;
+
 int x;//人物移动图片位置参数
 int y;//人物移动图片位置参数
 
@@ -35,12 +53,12 @@ int level_num;//当前关卡数
 
 IMAGE people_right, people_left, people_right_2, people_left_2, bk, bk2;
 IMAGE play1, play2, title1, title2, play, pile_1, pile_2, pile3, pile4;
-IMAGE back_a_1, back_a_2;
-IMAGE back_menu1, back_menu2;
-IMAGE back_a2_1, back_a2_2;
+IMAGE back_a_1, back_a_2, back_b_1, back_b_2, back_c_1, back_c_2, back_d_1, back_d_2, back_e_1, back_e_2, back_f_1, back_f_2;
+IMAGE back_menu1, back_menu2, gameover1, gameover2,结束语;
+IMAGE back_a2_1, back_a2_2, back_b2_1, back_b2_2, back_c2_1, back_c2_2, back_d2_1, back_d2_2, back_e2_1, back_e2_2, back_f2_1, back_f2_2;
 IMAGE FLASH, back_track;
 
-
+ExMessage m2;
 
 SYSTEMTIME t;//毫秒全局计时器，记录位置专用
 SYSTEMTIME t3,t4;//公用
@@ -69,7 +87,7 @@ int bk_flag;
 int flash_flag;
 int back_track_flag;
 
-#define NumOfWall 7
+#define NumOfWall 14
 #define NumOfTrap 4
 #define NumOfLevel 2
 #define NumOfBack 6
@@ -84,6 +102,12 @@ void start_menu();
 void take_back();
 void back_menu();
 void GameDraw();
+void first_game();
+void storage();
+void back_storage_position();
+void EndGame();
+void end_menu();
+int main();
 
 DWORD WINAPI musicplay(LPVOID lpparamer);
 DWORD WINAPI Star(LPVOID lpparame);
@@ -91,6 +115,9 @@ DWORD WINAPI RecordPosition(LPVOID postion);
 DWORD WINAPI dialogue(LPVOID dialogue);
 DWORD WINAPI mouse_hit(LPVOID mouse);
 DWORD WINAPI cd_timer(LPVOID Cd);
+DWORD WINAPI draw(LPVOID d);
+DWORD WINAPI sleep(LPVOID s);
+DWORD WINAPI mouse_position(LPVOID ms);
 
 //音乐播放参数
 int music_move_flag;
@@ -192,6 +219,18 @@ struct BACK
 }back[NumOfBack];
 int back_menu_flag;
 int back_move_flag_a = 1;
+int back_move_flag_b = 1;
+int back_move_flag_c = 1;
+int back_move_flag_d = 1;
+int back_move_flag_e = 1;
+int back_move_flag_f = 1;
 
+struct storage_point
+{
+	int x1;
+	int x2;
+	int y;
+	int flag;
+}storage_point[3];
 
 STAR star[MAXSTAR];

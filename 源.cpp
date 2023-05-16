@@ -101,6 +101,14 @@ void KeyControl()
 		back_menu_flag = 1;
 		back_menu();
 	}
+	if (GetAsyncKeyState(84))//T存档
+	{
+		storage();
+	}
+	if (GetAsyncKeyState(27))//esc退出
+	{
+		people.life = 0;
+	}
 	if (flag == 1)
 	{
 		time(&now1);
@@ -109,7 +117,7 @@ void KeyControl()
 		if (flagm == 0)
 		{
 			msc2 = (t1.tm_min * 60 + t1.tm_sec) * 1000 + t.wMilliseconds;//用毫秒记录当前时间
-			if (msc2 - msc1 >= 2000 || msc1 == 1)//设置脚步声间隔时间
+			if (msc2 - msc1 >= 200 || msc1 == 1)//设置脚步声间隔时间
 				flagm = 1;
 		}
 
@@ -185,6 +193,7 @@ void move()
 		}
 	}
 
+	
 }
 
 
@@ -205,6 +214,11 @@ void HitDet()//碰撞，悬空检测
 	else
 		people.flying = true;
 
+	//掉落回到存档点
+	if (people.y_speed > 100 && storage_no!=0 &&endflag==0)
+		back_storage_position();
+	if (people.y_speed > 100 && storage_no == 0 && endflag == 0)
+		ChangeLevel(1);
 	for (int i = 0; i < NumOfTrap; i++)//陷阱触碰检测
 	{
 		if (((trap[i].x1 <= people.body_left_x && people.body_left_x <= trap[i].x2) ||
@@ -285,12 +299,50 @@ void take_back()
 	//背包拾取判定
 	for (int i = 0; i < NumOfBack; i++)
 	{
-		if ((back[i].x1 <= people.body_left_x || people.body_left_x <= back[i].x2 ||
-			back[i].x1 <= people.body_right_x || people.body_right_x <= back[i].x2)
+		if ((back[i].x1 <= people.body_left_x && people.body_left_x <= back[i].x2 ||
+			back[i].x1 <= people.body_right_x && people.body_right_x <= back[i].x2)
 			&& people.foot_y == back[i].y2)
 
 			back[i].back_flag = 0;
+
+		if (back[4].back_flag == 0 && endflag == 0)
+		{
+			wall[13].x1 = 0;
+			wall[13].x2 = 0;
+			wall[13].y1 = 0;
+			wall[13].y2 = 0;
+			endflag = 1;
+			mciSendString("close bgm1", NULL, 0, NULL);
+			mciSendString("open bgm2.mp3 alias bgm2", NULL, 0, 0);
+			mciSendString("play bgm2", NULL, 0, NULL);
+			CreateThread(NULL, NULL, sleep, NULL, NULL, NULL);
+		}
+		if (back[5].back_flag == 0 && endflag == 1)
+		{
+			remove("A\\位置存档.txt");
+			remove("A\\背包存档.txt");
+			remove("A\\关卡数.txt");
+
+			int ye = 700;
+			cleardevice();
+			while (ye != -700)
+			{
+				putimage(0, ye, &结束语);
+				ye--;
+				Sleep(10);
+			}
+			exit(0);
+		}
 	}
+}
+
+DWORD WINAPI sleep(LPVOID s)
+{
+	Sleep(750);
+	ChangeLevel(1);
+	mciSendString("open p5.mp3 alias p5", NULL, 0, 0);
+	mciSendString("play p5", NULL, 0, NULL);
+	return 1;
 }
 
 void back_menu()
@@ -311,6 +363,30 @@ void back_menu()
 					putimage(385, 205, &back_a2_1, SRCAND);
 					putimage(385, 205, &back_a2_2, SRCPAINT);
 					break;
+				case 2:
+					putimage(585, 205, &back_b2_2, SRCAND);
+					putimage(585, 205, &back_b2_1, SRCPAINT);
+					break;
+				case 3:
+					putimage(785, 205, &back_c2_1, SRCAND);
+					putimage(785, 205, &back_c2_2, SRCPAINT);
+					break;
+				case 4:
+					putimage(385, 380, &back_d2_1, SRCAND);
+					putimage(385, 380, &back_d2_2, SRCPAINT);
+					break;
+				case 5:
+					putimage(585, 380, &back_e2_1, SRCAND);
+					putimage(585, 380, &back_e2_2, SRCPAINT);
+					break;
+				case 6:
+					if (endflag == 1)
+					{
+						putimage(785, 380, &back_f2_1, SRCAND);
+						putimage(785, 380, &back_f2_2, SRCPAINT);
+					}
+					break;
+
 				}
 			}
 		}
@@ -326,7 +402,7 @@ void back_menu()
 	}
 }
 
-void GameDraw()
+void GameDraw()	
 {
 	cleardevice();
 	BeginBatchDraw();//双缓冲防止闪屏
@@ -334,6 +410,30 @@ void GameDraw()
 	if (level_num == 1)//第一关
 	{
 		putimage(0, 0, 1600, 700, &bk, bk_x, bk_y);//背景图片
+
+		//新手教程
+		{
+			if (flag_D == 1)
+			{
+				outtextxy(people.foot_x - 100, people.foot_y - 130, "按D右移");
+			}
+			if (flag_A == 1)
+			{
+				outtextxy(people.foot_x - 100, people.foot_y - 130, "按A左移");
+			}
+			if (flag_space == 1)
+			{
+				outtextxy(people.foot_x - 100, people.foot_y - 130, "按空格键跳跃");
+			}
+			if (flag_R == 1)
+			{
+				outtextxy(people.foot_x - 100, people.foot_y - 130, "按R闪现");
+			}
+			if (flag_B == 1)
+			{
+				outtextxy(people.foot_x - 100, people.foot_y - 130, "按B回到3秒前位置");
+			}
+		}
 
 		if (back[0].back_flag == 1)
 		{
@@ -351,6 +451,24 @@ void GameDraw()
 				back[0].y1 -= 2;
 				if (back[0].y1 == 745)
 					back_move_flag_a = 1;
+			}
+		}
+		if (back[5].back_flag == 1 && endflag == 1)
+		{
+			putimage(back[5].x1 - windows.x1, back[5].y1 - windows.y1, &back_f_1, SRCAND);//背包图片
+			putimage(back[5].x1 - windows.x1, back[5].y1 - windows.y1, &back_f_2, SRCPAINT);
+
+			if (back_move_flag_f == 1)
+			{
+				back[5].y1 += 2;
+				if (back[5].y1 == 365)
+					back_move_flag_f = 0;
+			}
+			if (back_move_flag_f == 0)
+			{
+				back[5].y1 -= 2;
+				if (back[5].y1 == 345)
+					back_move_flag_f = 1;
 			}
 		}
 	}
@@ -473,9 +591,107 @@ void GameDraw()
 				}
 			}
 		}
+
+		
+
+		if (back[1].back_flag == 1)
+		{
+			putimage(back[1].x1 - windows.x1, back[1].y1 - windows.y1, &back_b_2, SRCAND);//背包图片
+			putimage(back[1].x1 - windows.x1, back[1].y1 - windows.y1, &back_b_1, SRCPAINT);
+
+			if (back_move_flag_b == 1)
+			{
+				back[1].y1 += 2;
+				if (back[1].y1 == 940)
+					back_move_flag_b = 0;
+			}
+			if (back_move_flag_b == 0)
+			{
+				back[1].y1 -= 2;
+				if (back[1].y1 == 920)
+					back_move_flag_b = 1;
+			}
+		}
+		if (back[2].back_flag == 1)
+		{
+			putimage(back[2].x1 - windows.x1, back[2].y1 - windows.y1, &back_c_1, SRCAND);//背包图片
+			putimage(back[2].x1 - windows.x1, back[2].y1 - windows.y1, &back_c_2, SRCPAINT);
+
+			if (back_move_flag_c == 1)
+			{
+				back[2].y1 += 2;
+				if (back[2].y1 == 1210)
+					back_move_flag_c = 0;
+			}
+			if (back_move_flag_c == 0)
+			{
+				back[2].y1 -= 2;
+				if (back[2].y1 == 1190)
+					back_move_flag_c = 1;
+			}
+		}
+		if (back[3].back_flag == 1)
+		{
+			putimage(back[3].x1 - windows.x1, back[3].y1 - windows.y1, &back_d_1, SRCAND);//背包图片
+			putimage(back[3].x1 - windows.x1, back[3].y1 - windows.y1, &back_d_2, SRCPAINT);
+
+			if (back_move_flag_d == 1)
+			{
+				back[3].y1 += 2;
+				if (back[3].y1 == 1780)
+					back_move_flag_d = 0;
+			}
+			if (back_move_flag_d == 0)
+			{
+				back[3].y1 -= 2;
+				if (back[3].y1 == 1760)
+					back_move_flag_d = 1;
+			}
+		}
+		if (back[4].back_flag == 1)
+		{
+			putimage(back[4].x1 - windows.x1, back[4].y1 - windows.y1, &back_e_1, SRCAND);//背包图片
+			putimage(back[4].x1 - windows.x1, back[4].y1 - windows.y1, &back_e_2, SRCPAINT);
+
+			if (back_move_flag_e == 1)
+			{
+				back[4].y1 += 2;
+				if (back[4].y1 == 1780)
+					back_move_flag_e = 0;
+			}
+			if (back_move_flag_e == 0)
+			{
+				back[4].y1 -= 2;
+				if (back[4].y1 == 1760)
+					back_move_flag_e = 1;
+			}
+		}
+	}
+	settextcolor(RGB(118, 216, 254));
+	settextstyle(19, 10, "System");
+	for (int i = 0; i < NumOfBack; i++)
+	{
+		if ((back[i].x1 <= people.body_left_x && people.body_left_x <= back[i].x2 ||
+			back[i].x1 <= people.body_right_x && people.body_right_x <= back[i].x2)
+			&& people.foot_y == back[i].y2)
+			if (back[i].back_flag == 1)
+				if (i != 5 && endflag == 0)
+					outtextxy(back[i].x1 + 5 - windows.x1, back[i].y2 - 120 - windows.y1, "F拾取");
+		if (i == 5 && endflag == 1)
+			outtextxy(back[i].x1 + 5 - windows.x1, back[i].y2 - 120 - windows.y1, "F拾取");
+	}
+
+	for (int i = 0; i < 3; i++)
+	{
+		if (storage_point[i].x1 <= people.foot_x && people.foot_x <= storage_point[i].x2 && people.foot_y == storage_point[i].y)
+			if (storage_point[i].flag == 0 && i + 1 != storage_no)
+			{
+				outtextxy(storage_point[i].x1 +10 - windows.x1, storage_point[i].y - 150 - windows.y1, "T存档");
+			}
 	}
 
 	//技能图标绘制
+	settextcolor(RGB(255, 63, 63));
 	settextstyle(30, 30, "新宋体");
 	if (flash_flag == 1)//闪现图标
 		putimage(0, 230, &FLASH);
@@ -524,7 +740,7 @@ void GameDraw()
 	//line(433, 0, 433, 700);
 	//line(0, 425, 1300, 425);
 	//line(0, 350, 1300, 350);
-
+	//line(5200 - windows.x1, 1760 - windows.y1, 5500 - windows.x1, 1760 - windows.y1);
 	//调试参数
 	{
 		settextstyle(15, 8, "新宋体");
@@ -563,10 +779,12 @@ void GameDraw()
 
 	EndBatchDraw();
 
-	if (people.flying == false)
-		Sleep(58);
-	if (people.flying == true)
+	
+		
+	if (people.flying == true && people.x_speed != 0)
 		Sleep(70);
+	else
+		Sleep(58);
 }
 
 void GameInit()
@@ -600,6 +818,30 @@ void GameInit()
 	windows.y1 = 0;
 	windows.y2 = 700;
 
+	fp2 = fopen("A\\位置存档.txt", "r");
+	if (fp2 == NULL);
+	else
+	{
+		fscanf(fp2, "%d", &storage_no);
+		fclose(fp2);
+	}
+	fp3 = fopen("A\\背包存档.txt", "rb");
+	if (fp3 == NULL)
+	{
+		back[0].back_flag = 1;
+		back[1].back_flag = 1;
+		back[2].back_flag = 1;
+		back[3].back_flag = 1;
+	}
+	else
+	{
+		fread(back, sizeof(struct BACK), NumOfBack, fp3);
+		fclose(fp3);
+	}
+	
+	
+
+
 	//墙体参数定义部分
 	//第一关
 	wall[0].x1 = 415;
@@ -625,6 +867,35 @@ void GameInit()
 	wall[6].x2 = 4530;
 	wall[6].y1 = 1270;
 	wall[6].y2 = 1400;
+	wall[7].x1 = 4660;
+	wall[7].x2 = 4760;
+	wall[7].y1 = 1400;
+	wall[7].y2 = 1480;
+	wall[8].x1 = 4950;
+	wall[8].x2 = 5110;
+	wall[8].y1 = 1530;
+	wall[8].y2 = 1660;
+	wall[9].x1 = 5210;
+	wall[9].x2 = 5310;
+	wall[9].y1 = 1840;
+	wall[9].y2 = 1920;
+	wall[10].x1 = 5490;
+	wall[10].x2 = 5550;
+	wall[10].y1 = 1840;
+	wall[10].y2 = 1860;
+	wall[11].x1 = 5670;
+	wall[11].x2 = 5730;
+	wall[11].y1 = 1840;
+	wall[11].y2 = 1860;
+	wall[12].x1 = 5850;
+	wall[12].x2 = 5910;
+	wall[12].y1 = 1840;
+	wall[12].y2 = 1860;
+	wall[13].x1 = 6030;
+	wall[13].x2 = 6090;
+	wall[13].y1 = 1840;
+	wall[13].y2 = 1860;
+	
 
 	//陷阱参数
 	//第二关
@@ -643,7 +914,9 @@ void GameInit()
 	trap[3].x1 = 1670;
 	trap[3].x2 = 1815;
 	trap[3].y1 = 1000;
-	trap[3].y2 = 1000;
+	trap[3].y2 = 1130;
+
+
 
 	//背包参数定义
 	back_menu_flag = 0;
@@ -651,14 +924,59 @@ void GameInit()
 	back[0].x2 = 3260;
 	back[0].y1 = 745;
 	back[0].y2 = 825;
-	back[0].back_flag = 1;
+	
+	back[1].x1 = 2380;
+	back[1].x2 = 2410;
+	back[1].y1 = 920;
+	back[1].y2 = 1000;
+	
+	back[2].x1 = 3570;
+	back[2].x2 = 3600;
+	back[2].y1 = 1190;
+	back[2].y2 = 1270;
 
+	back[3].x1 = 5240;
+	back[3].x2 = 5270;
+	back[3].y1 = 1760;
+	back[3].y2 = 1840;
+	
+	back[4].x1 = 6045;
+	back[4].x2 = 6075;
+	back[4].y1 = 1760;
+	back[4].y2 = 1840;
+	back[4].back_flag = 1;
+
+	back[5].x1 = 445;
+	back[5].x2 = 475;
+	back[5].y1 = 345;
+	back[5].y2 = 425;
+	back[5].back_flag = 1;
+	
 
 	//关卡出生点坐标，以脚步坐标为基准
 	level[0].start_x = 445;
 	level[0].start_y = 425;
 	level[1].start_x = 330;
 	level[1].start_y = 1000;
+
+	//存档点
+	storage_point[0].x1 = 715;
+	storage_point[0].x2 = 805;
+	storage_point[0].y = 425;
+	storage_point[0].flag = 0;
+	storage_point[1].x1 = 390;
+	storage_point[1].x2 = 480;
+	storage_point[1].y = 1000;
+	storage_point[1].flag = 0;
+	storage_point[2].x1 = 4400;
+	storage_point[2].x2 = 4470;
+	storage_point[2].y = 1270;
+	storage_point[2].flag = 0;
+	if (storage_no > 1)
+	{
+		ChangeLevel(2);
+		back_storage_position();
+	}
 
 	NumOfPile_X = 0;//炮弹数
 	NumOfPile_Y = 0;
@@ -708,15 +1026,66 @@ void GameInit()
 	loadimage(&back_a_2, "back_a_2.png");
 	loadimage(&back_a2_1, "back_a_1.png", 135, 115);
 	loadimage(&back_a2_2, "back_a_2.png", 135, 115);
+	loadimage(&back_b_1, "back_b_1.png");
+	loadimage(&back_b_2, "back_b_2.png");
+	loadimage(&back_b2_1, "back_b_1.png", 135, 115);
+	loadimage(&back_b2_2, "back_b_2.png", 135, 115);
+	loadimage(&back_c_1, "back_c_1.png");
+	loadimage(&back_c_2, "back_c_2.png");
+	loadimage(&back_c2_1, "back_c_1.png", 135, 115);
+	loadimage(&back_c2_2, "back_c_2.png", 135, 115);
+	loadimage(&back_d_1, "back_d_1.png");
+	loadimage(&back_d_2, "back_d_2.png");
+	loadimage(&back_d2_1, "back_d_1.png", 135, 115);
+	loadimage(&back_d2_2, "back_d_2.png", 135, 115);
+	loadimage(&back_e_1, "back_e_1.png");
+	loadimage(&back_e_2, "back_e_2.png");
+	loadimage(&back_e2_1, "back_e_1.png", 135, 115);
+	loadimage(&back_e2_2, "back_e_2.png", 135, 115);
+	loadimage(&back_f_1, "back_f_1.png");
+	loadimage(&back_f_2, "back_f_2.png");
+	loadimage(&back_f2_1, "back_f_1.png", 135, 115);
+	loadimage(&back_f2_2, "back_f_2.png", 135, 115);
 	loadimage(&back_menu1, "背包菜单1.png");
 	loadimage(&back_menu2, "背包菜单2.png");
 	loadimage(&FLASH, "flash.png",50,50);
 	loadimage(&back_track, "back_track.png",50,50);
-
+	loadimage(&gameover1, "gameover1.png");
+	loadimage(&gameover2, "gameover2.png");
+	loadimage(&结束语, "结束语.png");
 
 	mciSendString("close bgm1", NULL, 0, NULL);
 	mciSendString("open bgm1.mp3 alias bgm1", 0, NULL, 0);
 	mciSendString("play bgm1 repeat", NULL, 0, NULL);
+
+	fp1 = fopen("A\\NumOfPlay.txt", "r");
+	if (fp1 == NULL)
+	{
+		fp1 = fopen("A\\NumOfPlay.txt", "w");
+		fclose(fp1);
+		NumOfPlay = 0;
+	}
+	else
+		fscanf(fp1, "%d", &NumOfPlay);
+
+	if (NumOfPlay == 0)//判断是否第一次运行游戏
+		first_game_flag = 1;
+
+	NumOfPlay++;
+	fp1 = fopen("A\\NumOfPlay.txt", "w");
+	fprintf(fp1, "%d", NumOfPlay);
+	fclose(fp1);
+
+	if (first_game_flag == 1)
+	{
+		flag_draw = 1;
+		flag_dialogue = 1;
+		flag_A = 0;
+		flag_D = 0;
+		flag_space = 0;
+		flag_R = 0;
+		flag_B = 0;
+	}
 }
 
 DWORD WINAPI RecordPosition(LPVOID postion)//开辟一条线程来记录角色三秒前位置
@@ -786,9 +1155,9 @@ DWORD WINAPI RecordPosition(LPVOID postion)//开辟一条线程来记录角色三秒前位置
 		people.past_foot_y = old_y[0];
 		people.past_y_speed = old_speed_y[0];
 
-		//system("cls");
-		//printf("%d\n", NumOfOldPosition);
-		//printf("%d %d", TIME[0], msc);
+		system("cls");
+		printf("%d\n", NumOfOldPosition);
+		printf("%d %d", TIME[0], msc);
 	}
 	return 1;
 }
@@ -948,7 +1317,7 @@ void flash()//闪现
 	}
 }
 
-DWORD WINAPI cd_timer(LPVOID Cd)//CD计时线程
+DWORD WINAPI cd_timer(LPVOID Cd)//技能CD计时线程
 {
 	while (1)
 	{
@@ -1134,23 +1503,241 @@ DWORD WINAPI mouse_hit(LPVOID Mouse)
 	return 0;
 }
 
+void storage()//存档
+{
+	for (int i = 0; i < 3; i++)
+	{
+		if (storage_point[i].x1 <= people.foot_x && people.foot_x <= storage_point[i].x2 && people.foot_y == storage_point[i].y)
+		{
+			storage_point[i].flag = 1;
+			storage_no = i + 1;
+		}
+	}
+}
 
+void EndGame()
+{
+	fp2 = fopen("A\\位置存档.txt", "w");
+	fprintf(fp2, "%d", storage_no);
+	fp3 = fopen("A\\背包存档.txt", "wb");
+	fwrite(back, sizeof(struct BACK), NumOfBack, fp3);
+	fp4 = fopen("A\\关卡数.txt", "w");
+	fprintf(fp4, "%d", level_num);
+}
+
+void back_storage_position()
+{
+	if (storage_no == 0)
+	{
+		ChangeLevel(1);
+	}
+	else
+	{
+		int X = people.foot_x - storage_point[storage_no - 1].x1;
+		int Y = people.foot_y - storage_point[storage_no - 1].y;
+		people.foot_x = storage_point[storage_no - 1].x1;
+		people.foot_y = storage_point[storage_no - 1].y;
+		people.y_speed = 0;
+		people.body_left_x -= X;
+		people.body_right_x -= X;
+		people.head_x -= X;
+		people.head_y -= Y;
+		windows.x1 -= X;
+		windows.x2 -= X;
+		windows.y1 -= Y;
+		windows.y2 -= Y;
+		bk_x -= X;
+		bk_y -= Y;
+		music_back_flag = 1;
+		CreateThread(NULL, NULL, musicplay, NULL, NULL, NULL);
+		NumOfOldPosition = 1;
+	}
+}
+
+void first_game()
+{
+	if (flag_dialogue == 1)
+	{
+		CreateThread(NULL, NULL, draw, NULL, NULL, NULL);
+		mciSendString("open p1.mp3 alias p1", NULL, 0, 0);
+		mciSendString("play p1", NULL, 0, NULL);
+		Sleep(10000);
+		mciSendString("open p2.mp3 alias p2", NULL, 0, 0);
+		mciSendString("play p2", NULL, 0, NULL);
+		Sleep(12000);
+		mciSendString("open p3.mp3 alias p3", NULL, 0, 0);
+		mciSendString("play p3", NULL, 0, NULL);
+		Sleep(7000);
+		mciSendString("open p4.mp3 alias p4", NULL, 0, 0);
+		mciSendString("play p4", NULL, 0, NULL);
+		Sleep(9000);
+		flag_dialogue = 0;
+		flag_D = 1;
+		flag_draw = 0;
+	}
+
+	settextcolor(RGB(255, 63, 63));
+	settextstyle(30, 30, "新宋体");
+	
+	if (flag_D == 1)
+	{
+		if (GetAsyncKeyState(68))//d键右走
+		{
+			people.x_speed = 10;
+			people.direction = right;
+			move();
+			flag_D = 0;
+			flag_A = 1;
+		}
+	}
+	if (flag_A == 1)
+	{
+		HitDet();
+		if (people.flying == false)//在空中时，x速度不衰减，在地面时，松开方向键x速度归零
+			people.x_speed = 0;
+		if (GetAsyncKeyState(65))//
+		{
+			people.x_speed = 10;
+			people.direction = left;
+			move();
+			flag_A = 0;
+			flag_space = 1;
+		}
+	}
+	if (flag_space == 1)
+	{
+		HitDet();
+		if (people.flying == false)//在空中时，x速度不衰减，在地面时，松开方向键x速度归零
+			people.x_speed = 0;
+		if (GetAsyncKeyState(32))//
+		{
+			people.y_speed = -20;
+			move();
+			flag_space = 0;
+			flag_R = 1;
+		}
+	}
+	if (flag_R == 1 && people.y_speed == 0)
+	{
+		if (GetAsyncKeyState(82))//
+		{
+			flash();
+			move();
+			flag_R = 0;
+			flag_B = 1;
+		}
+	}
+	if (flag_B == 1)
+	{
+		if (GetAsyncKeyState(66))//d键右走
+		{
+			BackTrack();
+			move();
+			flag_B = 0;
+			first_game_flag = 0;
+		}
+	}
+}
+
+void end_menu()
+{
+		int count = 0;
+		int sb = 0;
+		int hit = 0;
+		while (!hit)
+		{
+			if (sb == 0)
+			{
+				putimage(0, 0, &gameover1);
+				count++;
+				if (count == 90)
+				{
+					count = 0;
+					sb = 1;
+				}
+			}
+			if (sb == 1)
+			{
+				putimage(0, 0, &gameover2);
+				count++;
+				if (count == 50)
+				{
+					count = 0;
+					sb = 0;
+				}
+			}
+			Sleep(10);
+			if (595 <= m2.x && m2.x <= 707 && 477 <= m2.y && m2.y <= 529)//重新开始
+			{
+				if (m2.lbutton == true)
+				{
+					hit = 1;
+					game_again_flag = 1;
+					people.life = 100;
+					back_storage_position();
+					main();
+				}
+			}
+
+			if (597 <= m2.x && m2.x <= 713 && 556 <= m2.y && m2.y <= 588)//退出游戏
+			{
+				if (m2.lbutton == true)
+				{
+					hit = 1;
+					exit(0);
+				}
+			}
+		}
+	
+}
+
+DWORD WINAPI mouse_position(LPVOID ms)
+{
+	while (1)
+	{
+		m2 = getmessage(EX_MOUSE);//获取鼠标状态给m2
+	}
+
+	return 0;
+}
+
+DWORD WINAPI draw(LPVOID d)
+{
+	while (flag_draw == 1)
+	{
+		GameDraw();
+	}
+	return 0;
+}
 
 int main()
 {
-	GameInit();
-	CreateThread(NULL, NULL, Star, NULL, NULL, NULL);
-	start_menu();
-	
-	CreateThread(NULL, NULL, RecordPosition, NULL, NULL, NULL);
-	CreateThread(NULL, NULL, cd_timer, NULL, NULL, NULL);
-	//ChangeLevel(2);
+	if (game_again_flag == 0)
+	{
+		GameInit();
+		CreateThread(NULL, NULL, Star, NULL, NULL, NULL);
+		start_menu();
+		CreateThread(NULL, NULL, RecordPosition, NULL, NULL, NULL);
+		CreateThread(NULL, NULL, cd_timer, NULL, NULL, NULL);
+		CreateThread(NULL, NULL, mouse_position, NULL, NULL, NULL);
+	}
+
 	while (people.life > 0)
 	{
 		GameDraw();
+
+		if (first_game_flag == 1)
+		first_game();
+
+		if (first_game_flag == 0)
 		KeyControl();
+
 		move();
 		HitDet();
+
+		if (first_game_flag == 0 && endflag == 0)
 		dialogue_play();
 	}
+	EndGame();
+	end_menu();
 }

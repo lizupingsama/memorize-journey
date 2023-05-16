@@ -340,7 +340,7 @@ DWORD WINAPI sleep(LPVOID s)
 {
 	Sleep(750);
 	ChangeLevel(1);
-	mciSendString("open p5.mp3 alias p5", NULL, 0, 0);
+	mciSendString("open p5.mp3 alias p5", NULL, 0, 0);	
 	mciSendString("play p5", NULL, 0, NULL);
 	return 1;
 }
